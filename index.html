@@ -76,10 +76,10 @@ input:disabled,textarea:disabled,select:disabled{opacity:.45}
 <div class="card" style="margin-top:16px">
 <h2>Art image</h2>
 <input type="file" id="artFile" accept="image/*" hidden>
-<div class="row"><button class="p" id="artUp">Upload image</button><button id="artEdit" disabled>Adjust image</button><button id="artDel" disabled>Remove</button></div>
+<div class="row"><button class="p" id="artUp">Upload image</button><button id="artPaste">Paste image</button><button id="artEdit" disabled>Adjust image</button><button id="artDel" disabled>Remove</button></div>
 <label for="artZoom">Zoom: <span id="azv">100</span>%</label><input type="range" id="artZoom" min="20" max="400" step="1" value="100" disabled>
 <label for="artL">Art prints with (3 or 4 layers)</label><select id="artL" data-k="artL"><option value="frame">Frame lines layer</option><option value="text">Text layer</option><option value="own">Its own layer</option></select>
-<div class="note">Drag the art in the preview to move it, and scroll over it to zoom. With 2 color layers the art prints with the ink layer.</div>
+<div class="note">You can also paste an image with Ctrl+V (Cmd+V on Mac) anywhere on the page, or drop an image file on the preview. Drag the art in the preview to move it, and scroll over it to zoom. With 2 color layers the art prints with the ink layer.</div>
 </div>
 <div class="card" style="margin-top:16px">
 <h2>Print settings</h2>
@@ -298,11 +298,20 @@ mcv.addEventListener('pointermove',e=>{if(!mdrag)return;const p=mv(e);ART.x=mdra
 const endM=()=>{mdrag=null;mcv.style.cursor=''};mcv.addEventListener('pointerup',endM);mcv.addEventListener('pointercancel',endM);
 mcv.addEventListener('wheel',e=>{e.preventDefault();const p=mv(e);zoomAt(Math.exp(-e.deltaY*0.0015),p[0],p[1]);msched()},{passive:false});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('ov').hidden)closeModal(false)});
-$('artFile').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+function loadImageFile(f){if(!f)return;if(!$('ov').hidden)closeModal(false);
  const u=URL.createObjectURL(f),im=new Image();
  im.onload=()=>{const s=Math.min(1,1600/Math.max(im.naturalWidth,im.naturalHeight)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.naturalWidth*s));c.height=Math.max(1,Math.round(im.naturalHeight*s));c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);
   Object.assign(ART,{src:c,ar:c.width/c.height,br:0,ct:0,bl:0.1,mf:0.4,inv:false,on:true,id:ART.id+1});place('fill');ART.th=otsu(processArt(ART));openModal(true)};
- im.onerror=()=>{URL.revokeObjectURL(u);alert('That file could not be read as an image.')};im.src=u});
+ im.onerror=()=>{URL.revokeObjectURL(u);alert('That file could not be read as an image.')};im.src=u}
+$('artFile').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';loadImageFile(f)});
+const imgFrom=list=>{for(const it of list||[]){if(it.kind==='file'&&it.type.startsWith('image/'))return it.getAsFile()}return null};
+document.addEventListener('paste',e=>{const f=imgFrom(e.clipboardData&&e.clipboardData.items);if(f){e.preventDefault();loadImageFile(f)}});
+async function pasteButton(){
+ try{if(!navigator.clipboard||!navigator.clipboard.read)throw 0;
+  for(const it of await navigator.clipboard.read()){const t=it.types.find(x=>x.startsWith('image/'));if(t){const b=await it.getType(t);loadImageFile(new File([b],'pasted',{type:t}));return}}
+  alert('No image found on the clipboard. Copy an image first.')}
+ catch(x){alert('This browser blocked clipboard access from the button. Press Ctrl+V (Cmd+V on Mac) on the page instead.')}}
+['dragover','drop'].forEach(ev=>prev.addEventListener(ev,e=>{const dt=e.dataTransfer;if(!dt||![...dt.types].includes('Files'))return;e.preventDefault();if(ev==='drop'){const f=[...dt.files].find(x=>x.type.startsWith('image/'));if(f)loadImageFile(f)}}));
 const vis={};
 function doc(parts,px){
  const sz=px?`width="${63*px}" height="${88*px}"`:`width="63mm" height="88mm"`;
@@ -374,6 +383,7 @@ async function svgButton(btn,only,name){
 document.addEventListener('click',async e=>{
  const t=e.target;
  if(t.id==='artUp')$('artFile').click();
+ if(t.id==='artPaste')pasteButton();
  if(t.id==='artEdit'&&ART.on)openModal(false);
  if(t.id==='artDel'){ART.on=false;render()}
  if(t.id==='mFit'||t.id==='mFill'){place(t.id==='mFit'?'fit':'fill');msched()}
