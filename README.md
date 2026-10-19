@@ -1,4 +1,4 @@
-# MTG Print Template
+# MTG 3D Printing Card Template Generator
 
 A single-page web app that generates Magic: The Gathering style card templates designed for FDM 3D printing with a 0.4 mm nozzle.
 
