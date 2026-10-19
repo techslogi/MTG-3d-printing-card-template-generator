@@ -7,6 +7,7 @@ Inspired by [mtg.design](https://mtg.design/create), rebuilt so every line, lett
 ## Features
 
 - Standard card size: 63 x 88 mm
+- Four frames: Standard, Extended art, Promo textless and Token (2020 style)
 - Selectable color layers (2 by default: white base plate + black ink, so only one filament swap)
 - Uniform line widths of 0.4, 0.8 or 1.2 mm with rounded corners
 - Text converted to outline shapes, with 10 fonts including rounder options
